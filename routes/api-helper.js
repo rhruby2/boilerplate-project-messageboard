@@ -2,6 +2,22 @@ const {Thread, Reply} = require('../schema');
 
 class apiHelper {
     /**
+     * 
+     * @param {[Thread] | [Reply]} arr 
+     * @return {[Object]}
+     */
+    static removeSensitiveData = (arr) => {
+        return arr.map((model) => {
+            const obj = model.toObject();
+            delete obj.delete_password;
+            delete obj.reported;
+  
+            return obj;
+          })
+    }
+
+
+    /**
      * @returns {[Thread]} Thread documents
      */
     static getMockThreads = () => {
@@ -64,6 +80,7 @@ class apiHelper {
     /**
      * 
      * @param {[Thread]} thread Thread documents
+     * @returns {[Thread]} Thread documents
      */
     static modifyThreads = (threads) => {
         //change all dates to UTC Strings
@@ -78,15 +95,23 @@ class apiHelper {
     }
 
     static getBoard = async (boardName) => {
-        console.log('getBoard()');
-        //insertion order is not a reliable sort, therefore defining sort
-        return this.getMockThreads();
-        //return await Thread.find({board: boardName}).sort({bumped_on: 'desc'}).limit(10).exec();
+        //mongoose returns in insertion order which is not a reliable sort, therefore defining sort
+        //console.log("api-helper.js/getBoard(): returning Mock Threads");
+        //const threads = await Thread.find({board: boardName}).sort({bumped_on: 'desc'}).limit(10).exec();
+        //console.log(threads);
+        return await Thread.find({board: boardName});
+        //return this.getMockThreads();
     }
 
     
-    static createThread = (req) => {
-        
+    static createThread = async (req) => {
+        const newThread = await Thread.create({
+            board: req.body.board || req.params.board,
+            text: req.body.text,
+            delete_password: req.body.delete_password
+        })
+
+        return newThread;
     }
 }
 

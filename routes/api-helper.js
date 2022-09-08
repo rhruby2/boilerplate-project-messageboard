@@ -6,17 +6,24 @@ class apiHelper {
      * @param {[Thread] | [Reply]} arr 
      * @return {[Object]}
      */
-    static removeSensitiveData = (arr) => {
-        return arr.map((model) => {
-            const obj = model.toObject();
-            delete obj.delete_password;
-            delete obj.reported;
+    static removeSensitiveData = (model) => {
+        console.log(typeof model);
+        let obj = model;
+        //nested Reply models in Thread models are already converted into Objects
+        if(typeof model !== 'object'){
+            obj = model.toObject();
+        }
+        delete obj.delete_password;
+        delete obj.reported;
   
-            return obj;
-          })
+        return obj;
     }
 
-
+    static removeSensitiveDataFromArray = (arr) => {
+        return arr.map((model) => {
+            return this.removeSensitiveData(model);
+        });
+    }
     /**
      * @returns {[Thread]} Thread documents
      */
@@ -99,11 +106,12 @@ class apiHelper {
         //console.log("api-helper.js/getBoard(): returning Mock Threads");
         //const threads = await Thread.find({board: boardName}).sort({bumped_on: 'desc'}).limit(10).exec();
         //console.log(threads);
-        return await Thread.find({board: boardName});
+        return await Thread.find({board: boardName}).sort({bumped_on: 'desc'});
+
+        //for each thread, get 3 most recent replies
         //return this.getMockThreads();
     }
-
-    
+   
     static createThread = async (req) => {
         const newThread = await Thread.create({
             board: req.body.board || req.params.board,
@@ -112,6 +120,18 @@ class apiHelper {
         })
 
         return newThread;
+    }
+
+    //TODO:
+    static createReply = (req) => {
+        const newReply = new Reply({
+            //thread_id, text, delete_password
+            thread_id: req.body.thread_id,
+            text: req.body.text,
+            delete_password: req.body.delete_password,
+        });
+
+        return newReply;
     }
 }
 
